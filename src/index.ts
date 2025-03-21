@@ -201,7 +201,7 @@ async function getStatusName(octokit: any, projectId: string, optionId: string):
   }
 }
 
-const middleware = createNodeMiddleware(app, { pathPrefix: '/webhook' });
+const middleware = createNodeMiddleware(app);
 
 // 建立 HTTP 伺服器
 const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
