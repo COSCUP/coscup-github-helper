@@ -86,9 +86,7 @@ interface ProjectV2ItemPayload {
 }
 
 interface GraphQLResponse {
-  data: {
-    node: ProjectV2Item;
-  };
+  node: ProjectV2Item;
 }
 
 // 檢查必要的環境變數
@@ -165,7 +163,7 @@ app.webhooks.on('projects_v2_item.edited', async ({ payload, octokit }) => {
         itemId: item.node_id
       });
 
-      const content = response.data.node.content;
+      const content = response.node.content;
       const title = content?.title || '未知標題';
       const url = content?.url || '';
 
@@ -185,38 +183,6 @@ app.webhooks.on('projects_v2_item.edited', async ({ payload, octokit }) => {
     console.error('發送通知時發生錯誤：', error);
   }
 });
-
-// 獲取狀態名稱的輔助函數
-async function getStatusName(octokit: any, projectId: string, optionId: string): Promise<string> {
-  try {
-    const { data } = await octokit.graphql(`
-      query GetStatusName($projectId: ID!, $optionId: String!) {
-        node(id: $projectId) {
-          ... on ProjectV2 {
-            field(name: "Status") {
-              ... on ProjectV2FieldCommon {
-                options {
-                  id
-                  name
-                }
-              }
-            }
-          }
-        }
-      }
-    `, {
-      projectId,
-      optionId
-    });
-
-    const options = data.node.field.options;
-    const option = options.find((opt: any) => opt.id === optionId);
-    return option?.name || '未知狀態';
-  } catch (error) {
-    console.error('獲取狀態名稱時發生錯誤：', error);
-    return '未知狀態';
-  }
-}
 
 const middleware = createNodeMiddleware(app);
 
