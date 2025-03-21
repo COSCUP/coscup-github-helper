@@ -201,18 +201,29 @@ async function getStatusName(octokit: any, projectId: string, optionId: string):
   }
 }
 
+const middleware = createNodeMiddleware(app, { pathPrefix: '/webhook' });
+
 // 建立 HTTP 伺服器
 const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-  // 處理健康檢查端點
-  if (req.method === 'GET' && req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('OK');
-    return;
-  }
+  try {
+    // 處理健康檢查端點
+    if (req.method === 'GET' && req.url === '/health') {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('OK');
+      return;
+    }
 
-  // 使用 Octokit 的 webhook 中間件處理請求
-  const middleware = createNodeMiddleware(app);
-  await middleware(req, res);
+    // 處理 webhook 請求
+    if (await middleware(req, res)) return;
+
+    // 處理其他請求
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found');
+  } catch (error) {
+    console.error('處理請求時發生錯誤：', error);
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end('Internal Server Error');
+  }
 });
 
 const port = env.PORT ? parseInt(env.PORT, 10) : 3000;
