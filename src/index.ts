@@ -211,7 +211,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   }
 
   // 使用 Octokit 的 webhook 中間件處理請求
-  const middleware = createNodeMiddleware(app, { pathPrefix: '/webhook' });
+  const middleware = createNodeMiddleware(app);
   await middleware(req, res);
 });
 
