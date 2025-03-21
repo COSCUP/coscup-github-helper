@@ -3,7 +3,8 @@ import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { App, createNodeMiddleware } from 'octokit';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { MattermostClient, MattermostMessage } from './utils/mattermost.js';
+import { MattermostClient } from './utils/mattermost.js';
+import { handleProjectStatusChange } from './handlers/projectStatusChange.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -131,57 +132,7 @@ const mattermost = new MattermostClient(env.MATTERMOST_WEBHOOK_URL);
 
 // 處理 Project v2 Item 事件
 app.webhooks.on('projects_v2_item.edited', async ({ payload, octokit }) => {
-  try {
-    const typedPayload = payload as unknown as ProjectV2ItemPayload;
-    const item = typedPayload.projects_v2_item;
-    const changes = typedPayload.changes;
-
-    // 檢查是否有狀態變更
-    if (changes?.field_value?.field_name === 'Status') {
-      const oldStatus = changes.field_value.from?.name || '未知狀態';
-      const newStatus = changes.field_value.to?.name || '未知狀態';
-
-      // 使用 GraphQL API 獲取項目內容
-      const response = await octokit.graphql<GraphQLResponse>(`
-        query GetProjectItem($itemId: ID!) {
-          node(id: $itemId) {
-            ... on ProjectV2Item {
-              content {
-                ... on Issue {
-                  title
-                  url
-                }
-                ... on PullRequest {
-                  title
-                  url
-                }
-              }
-            }
-          }
-        }
-      `, {
-        itemId: item.node_id
-      });
-
-      const content = response.node.content;
-      const title = content?.title || '未知標題';
-      const url = content?.url || '';
-
-      const message: MattermostMessage = {
-        channel: 'information',
-        text: `🎯 專案項目狀態更新\n` +
-              `標題：${title}\n` +
-              `狀態：${oldStatus} ➡️ ${newStatus}\n` +
-              `更新者：${typedPayload.sender.login}\n` +
-              `[查看項目](${url})`
-      };
-
-      await mattermost.sendMessage(message);
-      console.log('已發送通知到 Mattermost');
-    }
-  } catch (error) {
-    console.error('發送通知時發生錯誤：', error);
-  }
+  await handleProjectStatusChange(payload, octokit, mattermost);
 });
 
 const middleware = createNodeMiddleware(app);
