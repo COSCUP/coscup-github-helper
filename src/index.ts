@@ -77,7 +77,8 @@ const app = new App({
   privateKey: env.GITHUB_PRIVATE_KEY,
   webhooks: {
     secret: env.GITHUB_WEBHOOK_SECRET
-  }
+  },
+  oauth: { clientId: '', clientSecret: '' },
 });
 
 // 初始化 Mattermost 客戶端
