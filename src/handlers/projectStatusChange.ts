@@ -67,6 +67,73 @@ const projectNumberToMattermostChannel: Record<number, string> = {
   4: 'information',
 }
 
+const colorToEmoji: Record<string, string> = {
+  RED: '🔴',
+  GREEN: '🟢',
+  BLUE: '🔵',
+  YELLOW: '🟡',
+  PURPLE: '🟣',
+  PINK: '💗',
+  ORANGE: '🟠',
+  GRAY: '⚫',
+  WHITE: '⚪',
+  CYAN: '🔷',
+  LIME: '💚',
+  BROWN: '🟤',
+  TEAL: '🔹',
+  INDIGO: '🔸',
+  VIOLET: '🔺',
+  BLACK: '⚫',
+  MAGENTA: '💜',
+  AQUA: '💠',
+  LAVENDER: '💜',
+  MAROON: '🟤',
+  OLIVE: '🟢',
+  NAVY: '🔵',
+  CRIMSON: '🔴',
+  GOLD: '🟡',
+  SILVER: '⚪',
+  TURQUOISE: '🔷',
+  CORAL: '🔸',
+  TOMATO: '🔴',
+  CHOCOLATE: '🟤',
+  SLATE: '⚫',
+  STEEL: '⚪',
+  PLUM: '🟣',
+  SALMON: '🔸',
+  PERIWINKLE: '🔷',
+  MINT: '💚',
+  LEMON: '🟡',
+  PEACH: '🔸',
+  ROSE: '💗',
+  LILAC: '💜',
+  AUBURN: '🟤',
+  CERULEAN: '🔵',
+  VERMILION: '🔴',
+  AQUAMARINE: '💠',
+  BURGUNDY: '🟤',
+  COBALT: '🔵',
+  EMERALD: '💚',
+  GARNET: '🔴',
+  JADE: '💚',
+  JASPER: '🟤',
+  LAPIS: '🔵',
+  MAUVE: '💜',
+  OCHRE: '🟡',
+  RUBY: '🔴',
+  SAPPHIRE: '🔵',
+  SCARLET: '🔴',
+  TAN: '🟤',
+  TAUPE: '⚫',
+  TOPAZ: '💠',
+  ULTRAMARINE: '🔵',
+  VERDIGRIS: '💚',
+  VIRIDIAN: '💚',
+  WHEAT: '🟡',
+  ZINC: '⚪',
+  ZIRCON: '💠',
+};
+
 export async function handleProjectStatusChange(
   payload: unknown,
   octokit: Octokit,
@@ -91,6 +158,10 @@ export async function handleProjectStatusChange(
     if (changes?.field_value?.field_name === 'Status') {
       const oldStatus = changes.field_value.from?.name || '未知狀態';
       const newStatus = changes.field_value.to?.name || '未知狀態';
+      const oldColor = changes.field_value.from?.color || '';
+      const newColor = changes.field_value.to?.color || '';
+      const oldEmoji = colorToEmoji[oldColor] || '⚪';
+      const newEmoji = colorToEmoji[newColor] || '⚪';
 
       // 使用 GraphQL API 獲取項目內容
       const response = await octokit.graphql<GraphQLResponse>(`
@@ -120,7 +191,7 @@ export async function handleProjectStatusChange(
 
       const message: MattermostMessage = {
         channel,
-        text: `[${title}](${url}) status changed from ${oldStatus} to ${newStatus} by [${typedPayload.sender.login}](${typedPayload.sender.html_url}) \n`
+        text: `Issue [${title}](${url}) status changed from ${oldEmoji}${oldStatus} to ${newEmoji}${newStatus} by [${typedPayload.sender.login}](${typedPayload.sender.html_url}) \n`
       };
 
       await mattermost.sendMessage(message);
