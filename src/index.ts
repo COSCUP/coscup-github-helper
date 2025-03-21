@@ -38,6 +38,53 @@ interface ProjectV2Item {
   };
 }
 
+interface StatusChange {
+  id: string;
+  name: string;
+  color: string;
+  description: string;
+}
+
+interface FieldValueChange {
+  field_node_id: string;
+  field_type: 'number' | 'single_select' | 'date' | 'text' | 'iteration';
+  field_name: string;
+  project_number: number;
+  from?: StatusChange;
+  to?: StatusChange;
+}
+
+interface ProjectV2ItemChanges {
+  field_value?: FieldValueChange;
+}
+
+interface ProjectV2ItemPayload {
+  action: string;
+  projects_v2_item: {
+    id: number;
+    node_id: string;
+    project_node_id: string;
+    content_node_id: string;
+    content_type: string;
+    creator: {
+      login: string;
+    };
+    created_at: string;
+    updated_at: string;
+    archived_at: string | null;
+  };
+  changes: ProjectV2ItemChanges;
+  organization: {
+    login: string;
+  };
+  sender: {
+    login: string;
+  };
+  installation: {
+    id: number;
+  };
+}
+
 interface GraphQLResponse {
   data: {
     node: ProjectV2Item;
@@ -86,87 +133,57 @@ const mattermost = new MattermostClient(env.MATTERMOST_WEBHOOK_URL);
 
 // 處理 Project v2 Item 事件
 app.webhooks.on('projects_v2_item.edited', async ({ payload, octokit }) => {
-  console.log('Payload:', JSON.stringify(payload, null, 2));
-  // try {
-  //   console.log('Payload:', JSON.stringify(payload, null, 2));
+  try {
+    const typedPayload = payload as unknown as ProjectV2ItemPayload;
+    const item = typedPayload.projects_v2_item;
+    const changes = typedPayload.changes;
 
-  //   const item = payload.projects_v2_item;
-  //   const itemId = item.id;
+    // 檢查是否有狀態變更
+    if (changes?.field_value?.field_name === 'Status') {
+      const oldStatus = changes.field_value.from?.name || '未知狀態';
+      const newStatus = changes.field_value.to?.name || '未知狀態';
 
-  //   // 使用 GraphQL API 獲取更多項目資訊
-  //   const response = await octokit.graphql<GraphQLResponse>(`
-  //     query GetProjectItem($itemId: ID!) {
-  //       node(id: $itemId) {
-  //         ... on ProjectV2Item {
-  //           content {
-  //             ... on Issue {
-  //               title
-  //               url
-  //             }
-  //             ... on PullRequest {
-  //               title
-  //               url
-  //             }
-  //           }
-  //           fieldValues(first: 10) {
-  //             nodes {
-  //               ... on ProjectV2ItemFieldDateValue {
-  //                 field { name }
-  //                 date
-  //               }
-  //               ... on ProjectV2ItemFieldNumberValue {
-  //                 field { name }
-  //                 number
-  //               }
-  //               ... on ProjectV2ItemFieldSingleSelectValue {
-  //                 field { name }
-  //                 optionId
-  //               }
-  //               ... on ProjectV2ItemFieldTextValue {
-  //                 field { name }
-  //                 text
-  //               }
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   `, {
-  //     itemId
-  //   });
+      // 使用 GraphQL API 獲取項目內容
+      const response = await octokit.graphql<GraphQLResponse>(`
+        query GetProjectItem($itemId: ID!) {
+          node(id: $itemId) {
+            ... on ProjectV2Item {
+              content {
+                ... on Issue {
+                  title
+                  url
+                }
+                ... on PullRequest {
+                  title
+                  url
+                }
+              }
+            }
+          }
+        }
+      `, {
+        itemId: item.node_id
+      });
 
-  //   const projectItem = response.data.node;
-  //   const content = projectItem.content;
-  //   const title = content?.title || '未知標題';
-  //   const url = content?.url || '';
+      const content = response.data.node.content;
+      const title = content?.title || '未知標題';
+      const url = content?.url || '';
 
-  //   // 獲取狀態欄位的變更
-  //   const statusField = projectItem.fieldValues.nodes.find(
-  //     field => field.field.name === 'Status'
-  //   ) as ProjectV2ItemFieldValue;
+      const message: MattermostMessage = {
+        channel: 'information',
+        text: `🎯 專案項目狀態更新\n` +
+              `標題：${title}\n` +
+              `狀態：${oldStatus} ➡️ ${newStatus}\n` +
+              `更新者：${typedPayload.sender.login}\n` +
+              `[查看項目](${url})`
+      };
 
-  //   const oldStatus = payload.changes?.field_value?.field_node_id 
-  //     ? await getStatusName(octokit, item.project_node_id, payload.changes.field_value.field_node_id)
-  //     : '未知狀態';
-
-  //   const newStatus = statusField?.optionId 
-  //     ? await getStatusName(octokit, item.project_node_id, statusField.optionId)
-  //     : '未知狀態';
-
-  //   const message: MattermostMessage = {
-  //     channel: 'project-management',
-  //     text: `🎯 專案項目狀態更新\n` +
-  //           `標題：${title}\n` +
-  //           `狀態：${oldStatus} ➡️ ${newStatus}\n` +
-  //           `更新者：${payload.sender.login}\n` +
-  //           `[查看項目](${url})`
-  //   };
-
-  //   await mattermost.sendMessage(message);
-  //   console.log('已發送通知到 Mattermost');
-  // } catch (error) {
-  //   console.error('發送通知時發生錯誤：', error);
-  // }
+      await mattermost.sendMessage(message);
+      console.log('已發送通知到 Mattermost');
+    }
+  } catch (error) {
+    console.error('發送通知時發生錯誤：', error);
+  }
 });
 
 // 獲取狀態名稱的輔助函數
