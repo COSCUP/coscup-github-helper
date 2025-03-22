@@ -1,5 +1,6 @@
 import { Octokit } from 'octokit';
 import { MattermostClient, MattermostMessage } from '../utils/mattermost.js';
+import { getColorEmoji } from '../utils/color.js';
 
 interface ProjectV2ItemContent {
   title: string;
@@ -67,73 +68,6 @@ const projectNumberToMattermostChannel: Record<number, string> = {
   4: 'information',
 }
 
-const colorToEmoji: Record<string, string> = {
-  RED: '🔴',
-  GREEN: '🟢',
-  BLUE: '🔵',
-  YELLOW: '🟡',
-  PURPLE: '🟣',
-  PINK: '💗',
-  ORANGE: '🟠',
-  GRAY: '⚫',
-  WHITE: '⚪',
-  CYAN: '🔷',
-  LIME: '💚',
-  BROWN: '🟤',
-  TEAL: '🔹',
-  INDIGO: '🔸',
-  VIOLET: '🔺',
-  BLACK: '⚫',
-  MAGENTA: '💜',
-  AQUA: '💠',
-  LAVENDER: '💜',
-  MAROON: '🟤',
-  OLIVE: '🟢',
-  NAVY: '🔵',
-  CRIMSON: '🔴',
-  GOLD: '🟡',
-  SILVER: '⚪',
-  TURQUOISE: '🔷',
-  CORAL: '🔸',
-  TOMATO: '🔴',
-  CHOCOLATE: '🟤',
-  SLATE: '⚫',
-  STEEL: '⚪',
-  PLUM: '🟣',
-  SALMON: '🔸',
-  PERIWINKLE: '🔷',
-  MINT: '💚',
-  LEMON: '🟡',
-  PEACH: '🔸',
-  ROSE: '💗',
-  LILAC: '💜',
-  AUBURN: '🟤',
-  CERULEAN: '🔵',
-  VERMILION: '🔴',
-  AQUAMARINE: '💠',
-  BURGUNDY: '🟤',
-  COBALT: '🔵',
-  EMERALD: '💚',
-  GARNET: '🔴',
-  JADE: '💚',
-  JASPER: '🟤',
-  LAPIS: '🔵',
-  MAUVE: '💜',
-  OCHRE: '🟡',
-  RUBY: '🔴',
-  SAPPHIRE: '🔵',
-  SCARLET: '🔴',
-  TAN: '🟤',
-  TAUPE: '⚫',
-  TOPAZ: '💠',
-  ULTRAMARINE: '🔵',
-  VERDIGRIS: '💚',
-  VIRIDIAN: '💚',
-  WHEAT: '🟡',
-  ZINC: '⚪',
-  ZIRCON: '💠',
-};
-
 export async function handleProjectStatusChange(
   payload: unknown,
   octokit: Octokit,
@@ -160,8 +94,8 @@ export async function handleProjectStatusChange(
       const newStatus = changes.field_value.to?.name || '未知狀態';
       const oldColor = changes.field_value.from?.color || '';
       const newColor = changes.field_value.to?.color || '';
-      const oldEmoji = colorToEmoji[oldColor] || '⚪';
-      const newEmoji = colorToEmoji[newColor] || '⚪';
+      const oldEmoji = getColorEmoji(oldColor);
+      const newEmoji = getColorEmoji(newColor);
 
       // 使用 GraphQL API 獲取項目內容
       const response = await octokit.graphql<GraphQLResponse>(`
@@ -189,9 +123,13 @@ export async function handleProjectStatusChange(
       const title = content?.title || '未知標題';
       const url = content?.url || '';
 
+      const statusChangeText = oldStatus === '未知狀態'
+        ? `status set to ${newEmoji} ${newStatus}`
+        : `status changed from ${oldEmoji} ${oldStatus} to ${newEmoji} ${newStatus}`;
+
       const message: MattermostMessage = {
         channel,
-        text: `Issue [${title}](${url}) status changed from ${oldEmoji}${oldStatus} to ${newEmoji}${newStatus} by [${typedPayload.sender.login}](${typedPayload.sender.html_url}) \n`
+        text: `Issue [${title}](${url}) ${statusChangeText} by [${typedPayload.sender.login}](${typedPayload.sender.html_url}) \n`
       };
 
       await mattermost.sendMessage(message);
