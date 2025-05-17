@@ -1,6 +1,9 @@
 export interface MattermostMessage {
-  channel: string;
-  text: string;
+  channel?: string; // Make channel optional if default is handled elsewhere or webhook defines it
+  text?: string; // Make text optional as attachments are primary now
+  attachments?: Record<string, any>[]; // Add attachments property
+  username?: string; // Keep other potential fields optional
+  icon_url?: string;
 }
 
 export class MattermostClient {
@@ -11,16 +14,23 @@ export class MattermostClient {
   }
 
   async sendMessage(message: MattermostMessage): Promise<void> {
-    const response = await fetch(this.webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(message)
-    });
+    try {
+      const response = await fetch(this.webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message), // This correctly sends the whole object including attachments
+      });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const responseBody = await response.text(); // Read response body for more details
+        throw new Error(`Mattermost API Error: ${response.status} ${response.statusText} - ${responseBody}`);
+      }
+      console.log('Message sent successfully to Mattermost.');
+    } catch (error) {
+      console.error('Error sending message to Mattermost:', error);
+      throw error; // Re-throw the error for upstream handling
     }
   }
-} 
+}

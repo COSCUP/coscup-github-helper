@@ -13,8 +13,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "octokit": "^3.1.2",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "googleapis": "^148.0.0",
+    "octokit": "^3.1.2"
   },
   "devDependencies": {
     "@types/node": "^20.17.25",

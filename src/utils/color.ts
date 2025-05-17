@@ -66,5 +66,11 @@ export const colorToEmoji: Record<string, string> = {
 };
 
 export function getColorEmoji(color: string): string {
-  return colorToEmoji[color] || '⚪';
-} 
+  return colorToEmoji[color.toUpperCase()] || '⚪'; // Added toUpperCase for robustness
+}
+
+// Function to get a random hex color code for Mattermost attachments
+export function getRandomColor(): string {
+  const colors = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#F1C40F", "#9B59B6", "#1ABC9C", "#E74C3C", "#3498DB", "#2ECC71"];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
