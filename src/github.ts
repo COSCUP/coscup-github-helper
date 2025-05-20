@@ -1,5 +1,5 @@
 import { getUpcomingEvents } from './utils/googleCalendar.js';
-import { MattermostClient, MattermostMessage } from './utils/mattermost.js'; // Import MattermostMessage type
+import { MattermostClient, MattermostMessage, MattermostAttachment } from './utils/mattermost.js'; // Import MattermostMessage and MattermostAttachment type
 import { getRandomColor } from './utils/color.js'; // Import color utility
 
 // Fixed list of quotes, including open-source related ones
@@ -18,9 +18,6 @@ const QUOTES = [
   "其實今年的回顧文件已經可以開始填寫：https://s.coscup.org/25review"
 ];
 
-// No need for quoteIndex anymore
-// let quoteIndex = 0;
-
 async function main() {
   const mattermostWebhookUrl = process.env.MATTERMOST_WEBHOOK_URL;
   if (!mattermostWebhookUrl) {
@@ -38,6 +35,8 @@ async function main() {
     const events = await getUpcomingEvents(calendarId);
     const mattermostClient = new MattermostClient(mattermostWebhookUrl); // Create client once
 
+    const eventAttachments: MattermostAttachment[] = [];
+
     for (const event of events) {
       if (event.start && event.start.dateTime && event.summary) {
         const startTime = new Date(event.start.dateTime);
@@ -46,37 +45,42 @@ async function main() {
         // Select quote randomly
         const randomIndex = Math.floor(Math.random() * QUOTES.length);
         const selectedQuote = QUOTES[randomIndex];
-        // quoteIndex++; // No longer needed
 
-        // Construct the fancier message with attachments
-        const message: MattermostMessage = {
-          channel: channel,
-          // text: `提醒：${event.summary}`, // Optional fallback text
-          attachments: [
-            {
-              fallback: `提醒： ${formattedStartTime} 有 ${event.summary} 活動！`, // Plain text fallback
-              color: getRandomColor(), // Use random color
-              // pretext: "📅 近期活動提醒",
-              title: `🗓️ ${event.summary}`,
-              title_link: event.htmlLink,
-              // Use description field from event if available, otherwise fallback
-              text: `**時間：** ${formattedStartTime}
+        // Construct the attachment for each event
+        const attachment: MattermostAttachment = {
+          fallback: `提醒： ${formattedStartTime} 有 ${event.summary} 活動！`, // Plain text fallback
+          color: getRandomColor(), // Use random color
+          title: `🗓️ ${event.summary}`,
+          title_link: event.htmlLink,
+          text: `**時間：** ${formattedStartTime}
 
 **地點/連結：** ${event.location || event.description || event.hangoutLink || '未指定'}
 
-*每日一句：${selectedQuote}*`, // Main content with markdown and random quote. Escaped newlines for JSON.
-            }
-          ]
+*每日一句：${selectedQuote}*`, // Main content with markdown and random quote.
         };
 
-        await mattermostClient.sendMessage(message);
-        console.log(`已發送會議提醒到 Mattermost: ${event.summary}`);
+        eventAttachments.push(attachment);
 
       } else {
         console.error('event:', event);
         console.error('Error: Incomplete event data.');
       }
     }
+
+    // Send a single message with all event attachments
+    if (eventAttachments.length > 0) {
+      const combinedMessage: MattermostMessage = {
+        channel: channel,
+        text: "COSCUP 今天會議提醒：", // Add the requested prefix
+        attachments: eventAttachments,
+      };
+
+      await mattermostClient.sendMessage(combinedMessage);
+      console.log(`已發送合併會議提醒到 Mattermost，共 ${eventAttachments.length} 個事件`);
+    } else {
+      console.log("沒有即將到來的會議。");
+    }
+
   } catch (error) {
     console.error('處理 Google Calendar 事件或發送 Mattermost 訊息時發生錯誤:', error);
   }

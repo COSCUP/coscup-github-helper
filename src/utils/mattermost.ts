@@ -1,7 +1,9 @@
+export type MattermostAttachment = Record<string, any>
+
 export interface MattermostMessage {
   channel?: string; // Make channel optional if default is handled elsewhere or webhook defines it
   text?: string; // Make text optional as attachments are primary now
-  attachments?: Record<string, any>[]; // Add attachments property
+  attachments?: MattermostAttachment[]; // Add attachments property
   username?: string; // Keep other potential fields optional
   icon_url?: string;
 }
