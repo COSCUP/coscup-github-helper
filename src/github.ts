@@ -73,6 +73,9 @@ async function main() {
         channel: channel,
         text: "COSCUP 今天會議提醒：", // Add the requested prefix
         attachments: eventAttachments,
+        priority: {
+          priority: 'important',
+        },
       };
 
       await mattermostClient.sendMessage(combinedMessage);

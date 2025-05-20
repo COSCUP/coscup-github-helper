@@ -6,6 +6,9 @@ export interface MattermostMessage {
   attachments?: MattermostAttachment[]; // Add attachments property
   username?: string; // Keep other potential fields optional
   icon_url?: string;
+  priority?: {
+    priority: 'important' | 'urgent';
+  };
 }
 
 export class MattermostClient {
