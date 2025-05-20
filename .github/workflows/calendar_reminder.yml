@@ -3,6 +3,7 @@ name: Calendar Reminder
 on:
   schedule:
     - cron: '0 0 * * *' # Run daily at midnight
+  workflow_dispatch:
 
 jobs:
   send-reminder:
