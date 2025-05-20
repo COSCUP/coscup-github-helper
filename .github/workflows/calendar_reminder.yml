@@ -25,7 +25,7 @@ jobs:
       - name: Build source
         run: pnpm run build
       - name: Run script
-        run: node dist/src/github.js
+        run: node dist/github.js
         env:
           CALENDAR_ID: ${{ secrets.CALENDAR_ID }}
           GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
