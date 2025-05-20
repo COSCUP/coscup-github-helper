@@ -42,6 +42,13 @@ async function main() {
         const startTime = new Date(event.start.dateTime);
         const formattedStartTime = startTime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
 
+        let timeString = `**時間：** ${formattedStartTime}`;
+        if (event.end && event.end.dateTime) {
+          const endTime = new Date(event.end.dateTime);
+          const formattedEndTime = endTime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
+          timeString += ` - ${formattedEndTime}`;
+        }
+
         // Select quote randomly
         const randomIndex = Math.floor(Math.random() * QUOTES.length);
         const selectedQuote = QUOTES[randomIndex];
@@ -52,7 +59,7 @@ async function main() {
           color: getRandomColor(), // Use random color
           title: `🗓️ ${event.summary}`,
           title_link: event.htmlLink,
-          text: `**時間：** ${formattedStartTime}
+          text: `${timeString}
 
 **地點/連結：** ${event.location || event.description || event.hangoutLink || '未指定'}
 
