@@ -22,6 +22,8 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install
+      - name: Build source
+        run: pnpm run build
       - name: Run script
         run: node dist/src/github.js
         env:
