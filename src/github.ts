@@ -29,7 +29,7 @@ async function main() {
     throw new Error('CALENDAR_ID environment variable is not set.');
   }
 
-  const channel = process.env.MATTERMOST_CHANNEL || 'coscup-2025'; // Use env var or default
+  const channel = process.env.MATTERMOST_CHANNEL || 'coscup-2026'; // Use env var or default
 
   try {
     const events = await getUpcomingEvents(calendarId);
