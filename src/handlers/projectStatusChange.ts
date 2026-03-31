@@ -65,7 +65,7 @@ interface ProjectV2ItemPayload {
 
 const projectNumberToMattermostChannel: Record<number, string> = {
   7: 'program',
-  4: 'information',
+  4: 'web',
 }
 
 export async function handleProjectStatusChange(
