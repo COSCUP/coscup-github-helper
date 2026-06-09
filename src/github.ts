@@ -14,8 +14,8 @@ const QUOTES = [
   "開源吃掉全世界。",
   "COSCUP 的組別只是為了行政方便，而不是枷鎖，其實你完全可以參與任何有興趣的事情。",
   "COSCUP 總召與組長的存在，只是因為事情總要有人負責。",
-  "歡迎看看去年 2024 的回顧文件：https://s.coscup.org/24review",
-  "其實今年的回顧文件已經可以開始填寫：https://s.coscup.org/25review"
+  "歡迎看看去年 2025 的回顧文件：https://s.coscup.org/25review",
+  "其實今年的回顧文件已經可以開始填寫：https://docs.google.com/document/d/1zKJSylukjOhebpDo5sXTIybylB-kxzoxOB-xZoDf-cw/edit?usp=sharing"
 ];
 
 async function main() {
